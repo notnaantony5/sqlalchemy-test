@@ -1,38 +1,31 @@
 import datetime
 import enum
-
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
-
-class Priority(enum.Enum):
-    HIGH = 1
-    MEDIUM = 2
-    LOW = 3
+from sqlalchemy import String, ForeignKey, Enum
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
     __abstract__ = True
-
 
 class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(index=True, unique=True)
-    first_name: Mapped[str]
-    last_name: Mapped[str]
+    messages: Mapped[list["Message"]] = relationship("Message", back_populates="user")
 
-
-class Task(Base):
-    __tablename__ = 'tasks'
+class Message(Base):
+    __tablename__ = 'messages'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str]
-    description: Mapped[str]
-    priority: Mapped[Priority]
+    text: Mapped[str]
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    user: Mapped["User"] = relationship("User", back_populates="messages")
 
-    def to_representation(self) -> str:
-        return (f"Задача id={self.id}\n"
-                f"{self.title}\n"
-                f"{self.description}\n"
-                f"Приоритет - {self.priority.value}\n")
+class Comment(Base):
+    __tablename__ = 'comments'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    message_id: Mapped[int] = mapped_column(ForeignKey('messages.id'))
+    text: Mapped[str]
